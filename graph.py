@@ -3,7 +3,7 @@ from collections import defaultdict
 class Color():
     WHITE="W"
     BLACK="B"
-    EMPTY=""
+    EMPTY="E"
 
 class Square():
     
@@ -49,7 +49,7 @@ class SquareGraph():
         self.map[s1.position]=s1
     
     def get_square(self, pos):
-        self.map[pos]
+        return self.map[pos]
     def print_me(self):
         for k,v in self.graph.items():
             print(k.to_string(), end=" -> ")
@@ -69,6 +69,8 @@ class Node():
         self.SQ_BL = SQ_BL
         self.SQ_BR = SQ_BR
         self.is_boundary_node = is_boundary_node
+        self.is_start_node = False
+        self.is_target_node = False
         
     def to_string(self):
         return "Node:: "+str(self.position)
@@ -82,8 +84,8 @@ class CornerGraph():
             Delete edge between n1 and n2
         '''
         if type(n1)==tuple:
-            n1 = self.map[n1]
-            n2 = self.map[n2]
+            n1 = self.get_node(n1)
+            n2 = self.get_node(n2)
         
         self.graph[n1].remove(n2)
         self.graph[n2].remove(n1)
@@ -95,8 +97,8 @@ class CornerGraph():
             n1: node n1 or position of n2, = (i,j)
         '''
         if type(n1)==tuple:
-            n1 = self.map[n1]
-            n2 = self.map[n2]
+            n1 = self.get_node(n1)
+            n2 = self.get_node(n2)
         
         self.graph[n1].add(n2)
         self.graph[n2].add(n1)
@@ -105,9 +107,24 @@ class CornerGraph():
         self.graph[n1]
         self.map[n1.position] = n1
     
-    def get_node(self,pos_i, pos_j):
-        return self.map[(pos_i, pos_j)]
+    def get_node(self,pos):
+        return self.map[pos]
+   
+    def is_edge(self, pos1, pos2):
+        n1 = self.get_node(pos1)
+        n2 = self.get_node(pos2)
+        
+        if n2 in self.get_neighbours(n1):
+            return True
+        else:
+            return False
     
+    def get_neighbours(self, n1):
+        if type(n1)==tuple:
+            n1 = self.get_node(n1)
+        return self.graph[n1]
+    
+        
     def print_me(self):
         for k,v in self.graph.items():
             print(k.to_string(), end=" -> ")
@@ -148,12 +165,10 @@ class GraphBuilder():
         return False
     
     def __build_square_graph(self, matrix):
-        squares = dict()
         # build square graph
         for i in range(1,self.CR_ROWS,2):
             for j in range(1,self.CR_COLS,2):
                 sq = Square((int(i/2),int(j/2)),matrix[i][j])
-                #squares[sq.position] = sq
                 self.square_graph.add_square(sq)
                 #print(sq.to_string())
         for i in range(self.SQ_ROWS):
@@ -166,7 +181,6 @@ class GraphBuilder():
                     self.square_graph.add_edge((i,j),(i,j+1))
                 if j > 0:
                     self.square_graph.add_edge((i,j),(i,j-1))
-        print(squares)
         self.square_graph.print_me()
         
     
@@ -186,19 +200,21 @@ class GraphBuilder():
                 if c!=0:
                     TL = self.square_graph.get_square((r-1,c-1))
             return TL,TR,BL,BR
-        '''
         def my_print(x):
             if x:
                 return x.position
             else:
                 return x
-        '''
         for i in range(0,self.CR_ROWS,2):
             for j in range(0,self.CR_COLS,2):
                 TL,TR,BL,BR = get_squares(i,j)
                 
                 #print(i,j,my_print(TL),my_print(TR),my_print(BL),my_print(BR))
                 node = Node((int(i/2),int(j/2)), SQ_TL=TL, SQ_TR=TR, SQ_BL=BL, SQ_BR=BR, is_boundary_node=self.__is_boundary_node(i,j))
+                if matrix[i][j]=="*":
+                    node.is_start_node=True
+                elif matrix[i][j]=="#":
+                    node.is_target_node=True
                 self.corner_graph.add_node(node)
                 
         for i in range(0,self.CR_ROWS,2):
@@ -230,4 +246,45 @@ class GraphBuilder():
         
         self.__build_square_graph(matrix)
         self.__build_corner_graph(matrix)
-GraphBuilder().build_graph("board_3x3_1.txt")
+    
+    def print_board(self):
+        for i in range(self.CR_ROWS):
+            for j in range(self.CR_COLS):
+                e = "" if j==self.CR_COLS-1 else " "
+                p1 = (int(i/2), int(j/2))
+                n1 = self.corner_graph.get_node(p1)
+                            
+                if i%2==0:
+                    if j%2== 0:
+                        if n1.is_start_node:
+                            print("*", end=e)
+                        elif n1.is_target_node:
+                            print("#", end=e)
+                        else:
+                            print(".", end=e)
+                    else:
+                        if j != self.CR_COLS-1:
+                            p2 = (int(i/2), int(j/2)+1)
+                            
+                            if self.corner_graph.is_edge(p1,p2):
+                                print(".",end=e)
+                            else:
+                                print("~",end=e)
+                else:
+                    if j%2== 1:
+                        if j!=self.CR_COLS-1:
+                            #print(p1)
+                            print(n1.SQ_BR.color, end=e)
+                    else:
+                        if i!= self.CR_ROWS-1:
+                            p2 = (int(i/2)+1, int(j/2))
+                            
+                            if self.corner_graph.is_edge(p1,p2):
+                                print(".",end=e)
+                            else:
+                                print("~",end=e)
+            
+            print("")        
+g = GraphBuilder()
+g.build_graph("board_3x3_1.txt")
+g.print_board()
