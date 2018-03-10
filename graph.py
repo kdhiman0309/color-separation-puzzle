@@ -1,9 +1,9 @@
 from collections import defaultdict
-
+import random
 class Color():
     WHITE="W"
     BLACK="B"
-    EMPTY="E"
+    EMPTY="."
 
 class Square():
     
@@ -235,9 +235,12 @@ class GraphBuilder():
                         if matrix[i][j+1]==".":
                             self.corner_graph.add_edge((_i,_j), (_i,_j+1))
         self.corner_graph.print_me()
-    def build_graph(self,file_path):
+    
+    def build_graph(self,file_path=None, matrix=None):
         
-        matrix = self.__read_file(file_path)
+        if not matrix:
+            matrix = self.__read_file(file_path)
+        
         self.CR_COLS = len(matrix[0])
         self.CR_ROWS = len(matrix)
         
@@ -247,7 +250,84 @@ class GraphBuilder():
         self.__build_square_graph(matrix)
         self.__build_corner_graph(matrix)
     
-    def print_board(self):
+    def build_random_graph(self, num_rows=5, num_cols=5, prob_broken_edges=0.001, prob_squares = [0.2, 0.2]):
+        # prob_squares [Black, White]
+        self.SQ_ROWS = num_rows
+        self.SQ_COLS = num_cols
+        
+        self.CR_COLS = int(num_rows*2+1)
+        self.CR_ROWS = int(num_cols*2+1)
+        
+        matrix = [['.']* self.CR_COLS for _ in range(self.CR_ROWS)]
+        
+        # start point
+        
+        def get_random_boundary_point():
+            r=1
+            
+            while(r%2!=0):
+                r = random.randint(0,self.CR_ROWS-1)
+            c = 1
+            while(c%2!=0):
+                c = random.randint(0,self.CR_COLS-1)
+            return r,c
+        
+        def set_start():
+            r,c = get_random_boundary_point()
+            first_row = random.randint(0,1)
+            if first_row==1:
+                r=0
+            else:
+                c=0
+            matrix[r][c] = '*'
+        
+        def set_end():
+            r,c = get_random_boundary_point()
+            first_row = random.randint(0,1)
+            if first_row==1:
+                r=self.CR_ROWS-1
+            else:
+                c=self.CR_COLS-1
+            matrix[r][c] = '#'
+        
+        
+        set_start()
+        set_end()
+        
+        # set broken edges
+        
+        for i in range(0,self.CR_ROWS,1):
+            for j in range(0,self.CR_COLS,2):
+                o = 1 if i%2==0 else 0
+                
+                prob = random.random()
+                if prob <= prob_broken_edges:
+                    if j+o < self.CR_COLS:
+                        matrix[i][j+o]='~'
+                
+        # set squares color
+        for i in range(1,self.CR_ROWS,2):
+            for j in range(1,self.CR_COLS,2):
+                prob = random.random()
+                if prob<=prob_squares[0]:
+                    matrix[i][j] = 'B'
+                elif prob<=prob_squares[0]+prob_squares[1]:
+                    matrix[i][j] = 'W'
+                else:
+                    matrix[i][j] = '.'
+        
+        for x in matrix:
+            for y in x:
+                print(y,end=" ")
+            print("")
+        self.build_graph(matrix=matrix)
+        
+    def save_to_file(self,file_name):
+        self.print_board(file_name)
+        
+    
+    def print_board(self, file_name=None):
+        _str = ""
         for i in range(self.CR_ROWS):
             for j in range(self.CR_COLS):
                 e = "" if j==self.CR_COLS-1 else " "
@@ -257,34 +337,49 @@ class GraphBuilder():
                 if i%2==0:
                     if j%2== 0:
                         if n1.is_start_node:
-                            print("*", end=e)
+                            _str += "*"+e
+                            
                         elif n1.is_target_node:
-                            print("#", end=e)
+                            _str += "#"+e
+                            
                         else:
-                            print(".", end=e)
+                            _str += "."+e
+                            
                     else:
                         if j != self.CR_COLS-1:
                             p2 = (int(i/2), int(j/2)+1)
                             
                             if self.corner_graph.is_edge(p1,p2):
-                                print(".",end=e)
+                                _str += "."+e
                             else:
-                                print("~",end=e)
+                                _str += "~"+e
+                                
                 else:
                     if j%2== 1:
                         if j!=self.CR_COLS-1:
                             #print(p1)
-                            print(n1.SQ_BR.color, end=e)
+                            _str += n1.SQ_BR.color+e
+                            
                     else:
                         if i!= self.CR_ROWS-1:
                             p2 = (int(i/2)+1, int(j/2))
                             
                             if self.corner_graph.is_edge(p1,p2):
-                                print(".",end=e)
+                                _str += "."+e
+                                
                             else:
-                                print("~",end=e)
+                                _str += "~"+e
+                                
             
-            print("")        
+            _str += "\n"
+        if file_name:
+            file = open(file_name,'w')
+            file.write(_str)
+        else:
+            print(_str)
+
 g = GraphBuilder()
-g.build_graph("board_3x3_1.txt")
+g.build_graph(file_path="board_3x3_1.txt")
 g.print_board()
+g.build_random_graph(prob_broken_edges=0.01)
+g.save_to_file("board_5x5_random.txt")
