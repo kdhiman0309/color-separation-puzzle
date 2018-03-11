@@ -7,12 +7,21 @@ class Color():
 
 class Square():
     
-    def __init__(self, pos, color):
+    def __init__(self, pos, color, N_TL=None, N_TR=None, N_BL=None, N_BR=None):
         self.position = pos
         self.color = color
+        self.N_TL = N_TL
+        self.N_TR = N_TR
+        self.N_BL = N_BL
+        self.N_BR = N_BR
+        
 
     def to_string(self):
-        return "Square:: "+str(self.position)+" "+self.color
+        return "Square:: "+str(self.position)+" "+self.color \
+                + " ;TL "+ (str(self.N_TL.position) if self.N_TL else "")\
+                + " ;TR "+ (str(self.N_TR.position) if self.N_TR else "")\
+                + " ;BL "+ (str(self.N_BL.position) if self.N_BL else "")\
+                + " ;BR "+ (str(self.N_BR.position) if self.N_BR else "")
 class SquareGraph():
     '''
         Square graph class
@@ -73,7 +82,11 @@ class Node():
         self.is_target_node = False
         
     def to_string(self):
-        return "Node:: "+str(self.position)
+        return "Node:: "+str(self.position)\
+                + " ;TL "+ (str(self.SQ_TL.position) if self.SQ_TL else "")\
+                + " ;TR "+ (str(self.SQ_TR.position) if self.SQ_TR else "")\
+                + " ;BL "+ (str(self.SQ_BL.position) if self.SQ_BL else "")\
+                + " ;BR "+ (str(self.SQ_BR.position) if self.SQ_BR else "")
 class CornerGraph():
     
     def __init__(self):
@@ -181,7 +194,7 @@ class GraphBuilder():
                     self.square_graph.add_edge((i,j),(i,j+1))
                 if j > 0:
                     self.square_graph.add_edge((i,j),(i,j-1))
-        self.square_graph.print_me()
+        #self.square_graph.print_me()
         
     
     def __build_corner_graph(self, matrix):
@@ -205,12 +218,22 @@ class GraphBuilder():
                 return x.position
             else:
                 return x
+        def set_node(node, TL,TR,BL,BR):
+            if TL:
+                TL.N_BR = node
+            if TR: 
+                TR.N_BL = node
+            if BL:
+                BL.N_TR = node
+            if BR:
+                BR.N_TL = node
+            
         for i in range(0,self.CR_ROWS,2):
             for j in range(0,self.CR_COLS,2):
                 TL,TR,BL,BR = get_squares(i,j)
-                
                 #print(i,j,my_print(TL),my_print(TR),my_print(BL),my_print(BR))
                 node = Node((int(i/2),int(j/2)), SQ_TL=TL, SQ_TR=TR, SQ_BL=BL, SQ_BR=BR, is_boundary_node=self.__is_boundary_node(i,j))
+                set_node(node,TL,TR,BL,BR)
                 if matrix[i][j]=="*":
                     node.is_start_node=True
                 elif matrix[i][j]=="#":
@@ -234,7 +257,7 @@ class GraphBuilder():
                     if j!=self.CR_COLS-1:
                         if matrix[i][j+1]==".":
                             self.corner_graph.add_edge((_i,_j), (_i,_j+1))
-        self.corner_graph.print_me()
+        #self.corner_graph.print_me()
     
     def build_graph(self,file_path=None, matrix=None):
         
@@ -249,6 +272,9 @@ class GraphBuilder():
         
         self.__build_square_graph(matrix)
         self.__build_corner_graph(matrix)
+        
+        self.square_graph.print_me()
+        self.corner_graph.print_me()
     
     def build_random_graph(self, num_rows=5, num_cols=5, prob_broken_edges=0.001, prob_squares = [0.2, 0.2]):
         # prob_squares [Black, White]
@@ -380,6 +406,6 @@ class GraphBuilder():
 
 g = GraphBuilder()
 g.build_graph(file_path="board_3x3_1.txt")
-g.print_board()
-g.build_random_graph(prob_broken_edges=0.01)
-g.save_to_file("board_5x5_random.txt")
+#g.print_board()
+#g.build_random_graph(prob_broken_edges=0.01)
+#g.save_to_file("board_5x5_random.txt")
