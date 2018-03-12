@@ -306,6 +306,7 @@ class GraphBuilder():
             c = 1
             while(c%2!=0):
                 c = random.randint(0,self.CR_COLS-1)
+            print(r,c)
             return r,c
         
         def set_start():
@@ -315,6 +316,7 @@ class GraphBuilder():
                 r=0
             else:
                 c=0
+            print("start at", r,c)
             matrix[r][c] = '*'
         
         def set_end():
@@ -324,7 +326,10 @@ class GraphBuilder():
                 r=self.CR_ROWS-1
             else:
                 c=self.CR_COLS-1
-            matrix[r][c] = '#'
+            if matrix[r][c]!='*':    
+                matrix[r][c] = '#'
+            else:
+                set_end()
         
         
         set_start()
