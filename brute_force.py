@@ -1,58 +1,72 @@
+from connect_components import CheckConnectedComponents
+from base_solver import BaseSolver
 
-
-def direction(node1,node2):
-	dx = node2[0] - node1[0]
-	dy = node2[1] - node1[1]
-
-	if (dx == 1):
-		return 'RIGHT'
-	if (dx == -1):
-		return 'LEFT'
-	if (dy == 1):
-		return 'UP'
-	if (dy == -1):
-		return 'DOWN'
-
-def get_squares(node,d):
-	if(d == 'UP'):
-		return node.TL, node.TR
-	if(d == 'DOWN'):
-		return node.BL, node.BR
-	if(d == 'LEFT'):
-		return node.BL, node.TL
-	if(d == 'RIGHT'):
-		return node.BR, node.TR
-
-def solve_brute_force(node, path, S1_prev, S2_prev):
-	if (node.is_visited == true):
-		return false
-
-	node.is_visited = true
-
-	i,j = node.position
-	BL = node.BL
-	BR = node.BR
-	TL = node.TL
-	TR = node.TR
-
-	if node.is_boundary_node: 
-		same_color = check_connect_components(S1_prev,S2_prev)
-		if (!same_color):
-			return false
-
-	neighbours = corner_graph.get_neighbours(node)
-	n = nei.size
-	for i in range (0,n):
-		nei = neighbours[i]
-		path.append(nei)
-		d = direction(node,nei)
-		S1,S2 = get_squares(node,d)
-		square_graph.delete_edge(S1,S2)
-		if solve_brute_force(nei,path,S1,S2):
-			return true
-		square_graph.add_edge(S1,S2) 
-		path.pop()
-
-	node.is_visited = false
-
-	return false
+class BruteForceSolver(BaseSolver):
+    
+    def __init__(self, square_graph, corner_graph):
+        self.square_graph = square_graph
+        self.corner_graph = corner_graph
+        self.path = []
+        
+    def solve(self):
+        found = self.solve_brute_force(self.corner_graph.start_node)
+        if not found:
+            return []
+        return [self.corner_graph.start_node]+self.path
+    def solve_brute_force(self, node, S1_prev=None, S2_prev=None):
+        if node.is_visited:
+            return False
+        
+        node.is_visited = True
+        
+        if node.is_target_node:
+            correct_sol = CheckConnectedComponents(self.square_graph, self.corner_graph).check_solution()
+            if not correct_sol:
+                node.is_visited = False
+            else:
+                return True
+            #return True
+        
+        print(node.position)
+        if node.is_boundary_node: 
+            S1_same_color, S2_same_color = True, True
+            if S1_prev:
+                S1_same_color = CheckConnectedComponents(self.square_graph, self.corner_graph).is_same_colors(S1_prev)
+            if S2_prev:
+                S2_same_color = CheckConnectedComponents(self.square_graph, self.corner_graph).is_same_colors(S2_prev)
+        
+            if not (S1_same_color or S2_same_color):
+                #print("Not same color!")
+                node.is_visited = False
+                return False
+        
+        #same_color = conn_comp.check_connect_components(S1_prev,S2_prev)
+        #if (!same_color):
+    			#return false
+    
+        neighbours = self.corner_graph.get_neighbours(node)
+        print("neighbours",node.to_string(), end=" -> ")
+        for nei in neighbours:
+           print(nei.to_string(), end=" ")
+        print("")
+        for nei in neighbours:
+            if not nei.is_visited:
+                print(node.to_string(), nei.to_string())
+                self.path.append(nei)
+                d = self.direction(node,nei)
+                S1,S2 = self.get_squares(node,d)
+                print("dir:"+d+" S1",(S1.to_string() if S1 else "None"), " ", "S2:", (S2.to_string()  if S2 else "None"))
+                
+                if S1 and S2:
+                    self.square_graph.delete_edge(S1,S2)
+                    
+                if self.solve_brute_force(nei,S1,S2):
+                    return True
+                
+                if S1 and S2:
+                    self.square_graph.add_edge(S1,S2) 
+                self.path.pop()
+    
+        node.is_visited = False
+    
+        return False

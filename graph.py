@@ -14,14 +14,14 @@ class Square():
         self.N_TR = N_TR
         self.N_BL = N_BL
         self.N_BR = N_BR
-        
+        self.is_visited = False
 
     def to_string(self):
         return "Square:: "+str(self.position)+" "+self.color \
-                + " ;TL "+ (str(self.N_TL.position) if self.N_TL else "")\
-                + " ;TR "+ (str(self.N_TR.position) if self.N_TR else "")\
-                + " ;BL "+ (str(self.N_BL.position) if self.N_BL else "")\
-                + " ;BR "+ (str(self.N_BR.position) if self.N_BR else "")
+                #+ " ;TL "+ (str(self.N_TL.position) if self.N_TL else "")\
+                #+ " ;TR "+ (str(self.N_TR.position) if self.N_TR else "")\
+                #+ " ;BL "+ (str(self.N_BL.position) if self.N_BL else "")\
+                #+ " ;BR "+ (str(self.N_BR.position) if self.N_BR else "")
 class SquareGraph():
     '''
         Square graph class
@@ -59,6 +59,12 @@ class SquareGraph():
     
     def get_square(self, pos):
         return self.map[pos]
+    
+    def get_neighbours(self, s1):
+        if type(s1)==tuple:
+            s1 = self.get_square(s1)
+        return self.graph[s1]
+    
     def print_me(self):
         for k,v in self.graph.items():
             print(k.to_string(), end=" -> ")
@@ -80,18 +86,21 @@ class Node():
         self.is_boundary_node = is_boundary_node
         self.is_start_node = False
         self.is_target_node = False
+        self.is_visited = False
         
     def to_string(self):
         return "Node:: "+str(self.position)\
-                + " ;TL "+ (str(self.SQ_TL.position) if self.SQ_TL else "")\
-                + " ;TR "+ (str(self.SQ_TR.position) if self.SQ_TR else "")\
-                + " ;BL "+ (str(self.SQ_BL.position) if self.SQ_BL else "")\
-                + " ;BR "+ (str(self.SQ_BR.position) if self.SQ_BR else "")
+                #+ " ;TL "+ (str(self.SQ_TL.position) if self.SQ_TL else "")\
+                #+ " ;TR "+ (str(self.SQ_TR.position) if self.SQ_TR else "")\
+                #+ " ;BL "+ (str(self.SQ_BL.position) if self.SQ_BL else "")\
+                #+ " ;BR "+ (str(self.SQ_BR.position) if self.SQ_BR else "")
 class CornerGraph():
     
     def __init__(self):
         self.graph = defaultdict(set)    
         self.map = dict()
+        self.start_node = None
+        
     def delete_edge(self, n1, n2):
         '''
             Delete edge between n1 and n2
@@ -137,7 +146,7 @@ class CornerGraph():
             n1 = self.get_node(n1)
         return self.graph[n1]
     
-        
+    
     def print_me(self):
         for k,v in self.graph.items():
             print(k.to_string(), end=" -> ")
@@ -236,6 +245,7 @@ class GraphBuilder():
                 set_node(node,TL,TR,BL,BR)
                 if matrix[i][j]=="*":
                     node.is_start_node=True
+                    self.corner_graph.start_node = node
                 elif matrix[i][j]=="#":
                     node.is_target_node=True
                 self.corner_graph.add_node(node)
@@ -257,7 +267,7 @@ class GraphBuilder():
                     if j!=self.CR_COLS-1:
                         if matrix[i][j+1]==".":
                             self.corner_graph.add_edge((_i,_j), (_i,_j+1))
-        #self.corner_graph.print_me()
+        self.corner_graph.print_me()
     
     def build_graph(self,file_path=None, matrix=None):
         
@@ -273,8 +283,8 @@ class GraphBuilder():
         self.__build_square_graph(matrix)
         self.__build_corner_graph(matrix)
         
-        self.square_graph.print_me()
-        self.corner_graph.print_me()
+        #self.square_graph.print_me()
+        #self.corner_graph.print_me()
     
     def build_random_graph(self, num_rows=5, num_cols=5, prob_broken_edges=0.001, prob_squares = [0.2, 0.2]):
         # prob_squares [Black, White]
@@ -404,8 +414,3 @@ class GraphBuilder():
         else:
             print(_str)
 
-g = GraphBuilder()
-g.build_graph(file_path="board_3x3_1.txt")
-#g.print_board()
-#g.build_random_graph(prob_broken_edges=0.01)
-#g.save_to_file("board_5x5_random.txt")

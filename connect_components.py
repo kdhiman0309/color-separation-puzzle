@@ -1,21 +1,36 @@
-from sets import Set
-def check_connect_components(square_graph):
-    is_visited = Set()
-    for square in square_graph:
-        if square not in is_visited:
-            if not is_same_color(square_graph, square, square.color, is_visited):
-                return False
-    return True
 
+class CheckConnectedComponents():
 
-def is_same_color(square_graph, s, color, is_visited):
-    is_visited.add(s)
-    if len(square_graph[s]) == 0:
-        return True
-    for nei in square_graph[s]:
-        if nei.color is None or nei.color == color:
-            if not is_same_color(square_graph, nei, color, is_visited):
-                return False
-        else:
+    def __init__(self, square_graph, corner_graph):
+        self.square_graph = square_graph
+        self.corner_graph = corner_graph
+        self.visited = set()
+    
+    
+    def is_same_colors(self, square, color=None):
+        if not color or color=='.':
+            color = square.color
+        
+        if color!='.' and square.color!='.' and square.color != color:
+            # exit if current 'color' and square color are opposite 
             return False
-    return True
+        
+        self.visited.add(square)
+        
+        for s1 in self.square_graph.get_neighbours(square):
+            if not s1 in self.visited:
+                if not self.is_same_colors(s1, color):
+                    return False
+            
+        
+        return True
+    
+    
+    def check_solution(self):
+        for s1 in self.square_graph.graph.keys():
+            if not s1 in self.visited:
+                if not self.is_same_colors(s1):
+                    return False
+    
+        return True
+    
