@@ -413,171 +413,62 @@ class GraphBuilder():
             file.write(_str)
         else:
             print(_str)
-'''
+
 class PreprocessGraph(GraphBuilder):
     
-    def __case_corner(g,i,j,ty):
-        corner_sq=g.square_graph.get_square((i,j))
-        corner_color=corner_sq.color
-        print (corner_sq.to_string())
+    def __init__(self,g):
+        self.always_taken_graph = CornerGraph()
         
-        if ty=='BL':
-            adj_square1 = g.square_graph.get_square((i-1,j))
-            adj_square2 = g.square_graph.get_square((i,j+1))
-            color1 = adj_square1.color
-            color2 = adj_square2.color
-            if color1!='E' and color1!=corner_color and color1==color2:
-                sq1 = g.square_graph.get_square((i-1,j+1))   
-            
-        if ty=='BR':
-            adj_square1 = g.square_graph.get_square((i-1,j))
-            adj_square2 = g.square_graph.get_square((i,j-1))
-            color1 = adj_square1.color
-            color2 = adj_square2.color
-            if color1!='E' and color1!=corner_color and color1==color2:
-                sq1 = g.square_graph.get_square((i-1,j-1))   
-            
-        if ty=='TL':
-            adj_square1 = g.square_graph.get_square((i+1,j))
-            adj_square2 = g.square_graph.get_square((i,j+1))
-            color1 = adj_square1.color
-            color2 = adj_square2.color
-            if color1!='E' and color1!=corner_color and color1==color2:
-                sq1 = g.square_graph.get_square((i+1,j+1))   
+    def __taken_edges(self,g,S1):
+        neigh= g.square_graph.get_neighbours(S1)
+        #print("neigh: ", neigh)
+        for n in neigh:
+            print(n.color," ",S1.color)
+            if n.color!=S1.color and n.color!='.' and S1.color!='.':
+                #g.square_graph.delete_edge(S1,n)
+                S1_nodes=set([S1.N_TL,S1.N_TR,S1.N_BL,S1.N_BR])
+                n_nodes=set([n.N_TL,n.N_TR,n.N_BL,n.N_BR])
+                edge = S1_nodes.intersection(n_nodes)
+                self.always_taken_graph.add_node(list(edge)[0])
+                self.always_taken_graph.add_node(list(edge)[1])
+                self.always_taken_graph.add_edge(list(edge)[0],list(edge)[1])
                 
-        if ty=='TR':
-            adj_square1 = g.square_graph.get_square((i+1,j))
-            adj_square2 = g.square_graph.get_square((i,j-1))
-            color1 = adj_square1.color
-            color2 = adj_square2.color
-            if color1!='E' and color1!=corner_color and color1==color2:
-                sq1 = g.square_graph.get_square((i+1,j-1))   
-                
-        g.square_graph.delete_edge(adj_square1,sq1)
-        g.square_graph.delete_edge(adj_square2,sq1)
-            
-            
-    def __vertical_same_color(g,i,j):
-        prev_sq=g.square_graph.get_square((i,j))
-        prev_color=prev_sq.color
     
-        if prev_color!='E':
-            for k in range(i+1,g.SQ_ROWS):
-                curr_sq = g.square_graph.get_square((k,j))
-                curr_color = curr_sq.color
-                if curr_color==color and color!='E':
-                    #delete_edge(curr_sq.top_edge)
-                    g.square_graph.delete_edge(curr_sq,prev_sq)
-                prev_color=curr_color
-                
-    def __horizontal_same_color(g,i,j):
-        prev_sq=g.square_graph.get_square((i,j))
-        prev_color=prev_sq.color
+    def __delete_square_edges(self,g):
+        for i in range(g.SQ_ROWS):
+            for j in range(g.SQ_COLS):
+                S1= g.square_graph.get_square((i,j))
+                neigh= list(g.square_graph.get_neighbours(S1))
+                for n in neigh:
+                    print(n.color," ",S1.color)
+                    if n.color!=S1.color and n.color!='.' and S1.color!='.':
+                        g.square_graph.delete_edge(S1,n)
     
-        if prev_color!='E':
-            for k in range(j+1,g.SQ_COLS):
-                curr_sq = g.square_graph.get_square((i,k))
-                curr_color = curr_sq.color
-                if curr_color==color and color!='E':
-                    #delete_edge(curr_sq.left_edge)
-                    g.square_graph.delete_edge(curr_sq,prev_sq)
-                prev_color=curr_color
-                
-    def __middle_case(g,i,j):
-        mid_sq=g.square_graph.get_square((i,j))
-        mid_color=mid_sq.color
-        sq_tp= g.square_graph.get_square((i-1,j))
-        sq_lf= g.square_graph.get_square((i,j-1))
-        sq_rt= g.square_graph.get_square((i,j+1))
-        sq_bt= g.square_graph.get_square((i-1,j))
-        
-        #case-->   b
-        #        b w b
-        
-        if mid_color!='E' and mid_color!=sq_lf.color and sq_lf.color==sq_rt.color and sq_lf.color==sq_tp.color:
-            sq1=g.square_graph.get_square((i-1,j-1))
-            sq2=g.square_graph.get_square((i-1,j+1))
-            sq3=g.square_graph.get_square((i+1,j))
-            #delete_edge(sq_lf.top_edge)
-            g.square_graph.delete_edge(sq_lf,sq1)
+    
+    def __delete_corner_edges(self,g):
+        for i in range(int(g.CR_ROWS/2)):
+            for j in range(int(g.CR_COLS/2)):
+                node_origin = g.corner_graph.get_node((i,j))
+                if (i,j) in self.always_taken_graph.map.keys():
+                    node_always_taken = self.always_taken_graph.get_node((i,j))
+    
+                    neigh_origin=g.corner_graph.get_neighbours(node_origin)
+                    neigh_always_taken=self.always_taken_graph.get_neighbours(node_always_taken)
+                    
+                    if len(neigh_always_taken) > 1:
+                        n=neigh_origin.difference(neigh_always_taken)
+                    
+                        for node in n:
+                            #print("DELETING EDGE BETWEEN ::: ", node.position,node_origin.position)
+                            g.corner_graph.delete_edge(node,node_origin)
             
-            #delete_edge(sq_rt.top_edge)
-            g.square_graph.delete_edge(sq_rt,sq2)
-            
-            #delete_edge(sq_tp.left_edge)
-            g.square_graph.delete_edge(sq_tp,sq1)
-            
-            #delete_edge(sq_tp.right_edge)
-            g.square_graph.delete_edge(sq_tp,sq2)
-            
-            #delete_edge(mid_sq.bottom_edge)
-            g.square_graph.delete_edge(mid_sq,sq3)
-        
-        #case--> b w b
-        #          b
-        
-        if mid_color!='E' and mid_color!=sq_lf.color and sq_lf.color==sq_rt.color and sq_lf.color==sq_bt.color:
-            sq1=g.square_graph.get_square((i+1,j-1))
-            sq2=g.square_graph.get_square((i+1,j+1))
-            sq3=g.square_graph.get_square((i-1,j))
-            
-            #delete_edge(sq_lf.bottom_edge)
-            g.square_graph.delete_edge(sq_lf,sq1)
-            
-            #delete_edge(sq_rt.bottom_edge)
-            g.square_graph.delete_edge(sq_rt,sq2)
-            
-            #delete_edge(sq_bt.left_edge)
-            g.square_graph.delete_edge(sq_bt,sq1)
-            
-            #delete_edge(sq_bt.right_edge)
-            g.square_graph.delete_edge(sq_bt,sq2)
-            
-            #delete_edge(mid_sq.top_edge)
-            g.square_graph.delete_edge(mid_sq,sq3)
-        
     def preprocess(self,g):
-        print(g.square_graph.map)
-        #case: BL SQ
-        i=g.SQ_ROWS-1
-        j=0
-        ty='BL'
-        corner_color=g.square_graph.get_square((i,j)).color
-        if corner_color!='E':
-            self.__case_corner(i,j,ty)
-        
-        #case: BR SQ
-        i=g.SQ_ROWS-1
-        j=g.SQ_COLS-1
-        ty='BR'
-        corner_color=g.square_graph.get_square((i,j)).color
-        if corner_color!='E':
-            self-__case_corner(g,i,j,ty)
-            
-        #case: TL SQ
-        i=0
-        j=0
-        ty='TL'
-        corner_color=g.square_graph.get_square((i,j)).color
-        if corner_color!='E':
-            self.__case_corner(g,i,j,ty)
-        
-        #case: TR SQ
-        i=0
-        j=g.SQ_COLS-1
-        ty='TR'
-        corner_color=g.square_graph.get_square((i,j)).color
-        if corner_color!='E':
-            self.__case_corner(g,i,j,ty)
-            
-        for col in range(0,g.SQ_COLS):
-            self.__vertical_same_color(g,0,col)
-            
-        for row in range(0,g.SQ_ROWS):
-            self.__horizontal_same_color(g,row,0)
-            
-        for i in range(1,g.SQ_ROWS-1):
-            for j in range(1,g.SQ_COLS-1):
-                self.__middle_case(g,i,j)
+        for i in range(g.SQ_ROWS):
+            for j in range(g.SQ_COLS):
+                S1= g.square_graph.get_square((i,j))
+                self.__taken_edges(g,S1)
+                #self.always_taken_graph.print_me
+                
+        self.__delete_corner_edges(g)
+        #self.__delete_square_edges(g)
 
-'''
