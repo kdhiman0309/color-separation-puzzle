@@ -9,7 +9,7 @@ class BruteForceSolver(BaseSolver):
         self.corner_graph = corner_graph
         self.path = []
         self.verbose = verbose
-        
+        self.conn_comp = CheckConnectedComponents(self.square_graph, self.corner_graph)
         
     def solve(self):
         found = self.solve_brute_force(self.corner_graph.start_node)
@@ -24,7 +24,7 @@ class BruteForceSolver(BaseSolver):
         print("At:", node.position) if self.verbose else None
         
         if node.is_target_node:
-            correct_sol = CheckConnectedComponents(self.square_graph, self.corner_graph).check_solution()
+            correct_sol = self.conn_comp.check_solution()
             if not correct_sol:
                 node.is_visited = False
                 print("at target, conditions not met!")  if self.verbose else None
@@ -37,9 +37,9 @@ class BruteForceSolver(BaseSolver):
         if node.is_boundary_node: 
             S1_same_color, S2_same_color = True, True
             if S1_prev:
-                S1_same_color = CheckConnectedComponents(self.square_graph, self.corner_graph).is_same_colors(S1_prev)
+                S1_same_color = self.conn_comp.is_same_colors(S1_prev)
             if S2_prev:
-                S2_same_color = CheckConnectedComponents(self.square_graph, self.corner_graph).is_same_colors(S2_prev)
+                S2_same_color = self.conn_comp.is_same_colors(S2_prev)
         
             if not (S1_same_color or S2_same_color):
                 #print("Not same color!")

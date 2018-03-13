@@ -6,8 +6,11 @@ class CheckConnectedComponents():
         self.corner_graph = corner_graph
         self.visited = set()
     
+    def is_same_colors(self,square):
+        self.visited = set()
+        return self.__same_colors(square, color=square.color)
     
-    def is_same_colors(self, square, color=None):
+    def __same_colors(self, square, color=None):
         if not color or color=='.':
             color = square.color
         
@@ -19,7 +22,7 @@ class CheckConnectedComponents():
         
         for s1 in self.square_graph.get_neighbours(square):
             if not s1 in self.visited:
-                if not self.is_same_colors(s1, color):
+                if not self.__same_colors(s1, color):
                     return False
             
         
