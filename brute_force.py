@@ -12,10 +12,11 @@ class BruteForceSolver(BaseSolver):
         self.conn_comp = CheckConnectedComponents(self.square_graph, self.corner_graph)
         
     def solve(self):
+        self.path.append(self.corner_graph.start_node)
         found = self.solve_brute_force(self.corner_graph.start_node)
         if not found:
             return []
-        return [self.corner_graph.start_node]+self.path
+        return self.path
     def solve_brute_force(self, node, S1_prev=None, S2_prev=None):
         if node.is_visited:
             return False
