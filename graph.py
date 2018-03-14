@@ -10,10 +10,12 @@ class Square():
     def __init__(self, pos, color, N_TL=None, N_TR=None, N_BL=None, N_BR=None):
         self.position = pos
         self.color = color
-        self.N_TL = N_TL
-        self.N_TR = N_TR
-        self.N_BL = N_BL
-        self.N_BR = N_BR
+        self.adj_nodes = set()
+        
+        #self.N_TL = N_TL
+        #self.N_TR = N_TR
+        #self.N_BL = N_BL
+        #self.N_BR = N_BR
         self.is_visited = False
 
     def to_string(self):
@@ -80,6 +82,7 @@ class Node():
                  SQ_TL=None, SQ_TR=None, SQ_BL=None, SQ_BR=None,  
                  is_boundary_node=False):
         self.position = pos
+        
         self.SQ_TL = SQ_TL
         self.SQ_TR = SQ_TR
         self.SQ_BL = SQ_BL
@@ -102,6 +105,8 @@ class CornerGraph():
         self.always_taken = set()
         self.map = dict()
         self.start_node = None
+        self.NUM_ROWS = None
+        self.NUM_COLS = None
         
     def delete_edge(self, n1, n2):
         '''
@@ -150,9 +155,11 @@ class CornerGraph():
     def get_node(self,pos):
         return self.map[pos]
    
-    def is_edge(self, pos1, pos2):
-        n1 = self.get_node(pos1)
-        n2 = self.get_node(pos2)
+    def is_edge(self, n1, n2):
+        if type(n1)==tuple:
+            n1 = self.get_node(n1)
+            n2 = self.get_node(n2)
+        
         
         if n2 in self.get_neighbours(n1):
             return True
@@ -227,6 +234,9 @@ class GraphBuilder():
         
     
     def __build_corner_graph(self, matrix):
+        
+        self.corner_graph.NUM_COLS = int(self.CR_COLS/2)+1
+        self.corner_graph.NUM_ROWS = int(self.CR_ROWS/2)+1
         def get_squares(_i, _j):
             r= int(_i/2)
             c = int(_j/2)
@@ -249,6 +259,15 @@ class GraphBuilder():
                 return x
         def set_node(node, TL,TR,BL,BR):
             if TL:
+                TL.adj_nodes.add(node)
+            if TR: 
+                TR.adj_nodes.add(node)
+            if BL:
+                BL.adj_nodes.add(node)
+            if BR:
+                BR.adj_nodes.add(node)
+            '''
+            if TL:
                 TL.N_BR = node
             if TR: 
                 TR.N_BL = node
@@ -256,7 +275,7 @@ class GraphBuilder():
                 BL.N_TR = node
             if BR:
                 BR.N_TL = node
-            
+            '''
         for i in range(0,self.CR_ROWS,2):
             for j in range(0,self.CR_COLS,2):
                 TL,TR,BL,BR = get_squares(i,j)
@@ -384,7 +403,14 @@ class GraphBuilder():
         self.print_board(file_name)
         
     
-    def print_board(self, file_name=None):
+    def print_board(self, file_name=None, path=None):
+        path_nodes = set()
+        edges_set = set()
+        
+        if path:
+            for i in range(1,len(path)):
+                edges_set.add((path[i-1],path[i]))
+            path_nodes = set(path)
         _str = ""
         for i in range(self.CR_ROWS):
             for j in range(self.CR_COLS):
@@ -408,7 +434,12 @@ class GraphBuilder():
                             p2 = (int(i/2), int(j/2)+1)
                             
                             if self.corner_graph.is_edge(p1,p2):
-                                _str += "."+e
+                                np1 = self.corner_graph.get_node(p1)
+                                np2 = self.corner_graph.get_node(p2)
+                                if (np1,np2) in edges_set or (np2,np1) in edges_set:
+                                    _str += "_"+e
+                                else:    
+                                    _str += "."+e
                             else:
                                 _str += "~"+e
                                 
@@ -423,7 +454,13 @@ class GraphBuilder():
                             p2 = (int(i/2)+1, int(j/2))
                             
                             if self.corner_graph.is_edge(p1,p2):
-                                _str += "."+e
+                                np1 = self.corner_graph.get_node(p1)
+                                np2 = self.corner_graph.get_node(p2)
+                                
+                                if (np1,np2) in edges_set or (np2,np1) in edges_set:
+                                    _str += "|"+e
+                                else:
+                                    _str += "."+e
                                 
                             else:
                                 _str += "~"+e
@@ -448,12 +485,13 @@ class PreprocessGraph(GraphBuilder):
             #print(n.color," ",S1.color)
             if n.color!=S1.color and n.color!='.' and S1.color!='.':
                 #g.square_graph.delete_edge(S1,n)
-                S1_nodes=set([S1.N_TL,S1.N_TR,S1.N_BL,S1.N_BR])
-                n_nodes=set([n.N_TL,n.N_TR,n.N_BL,n.N_BR])
+                S1_nodes=S1.adj_nodes#set([S1.N_TL,S1.N_TR,S1.N_BL,S1.N_BR])
+                n_nodes=n.adj_nodes#set([n.N_TL,n.N_TR,n.N_BL,n.N_BR])
                 edge = S1_nodes.intersection(n_nodes)
-                self.always_taken_graph.add_node(list(edge)[0])
-                self.always_taken_graph.add_node(list(edge)[1])
-                self.always_taken_graph.add_edge(list(edge)[0],list(edge)[1])
+                if edge:
+                    self.always_taken_graph.add_node(list(edge)[0])
+                    self.always_taken_graph.add_node(list(edge)[1])
+                    self.always_taken_graph.add_edge(list(edge)[0],list(edge)[1])
                 
     
     def __delete_square_edges(self,g):

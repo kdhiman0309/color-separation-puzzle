@@ -5,6 +5,7 @@ class CheckConnectedComponents():
         self.square_graph = square_graph
         self.corner_graph = corner_graph
         self.visited = set()
+        self.all_same_color = -1
     
     def is_same_colors(self,square):
         if True:
