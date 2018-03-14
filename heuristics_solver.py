@@ -56,19 +56,15 @@ class HeuristicsSolver(BaseSolver):
         
         if node.is_target_node:
             correct_sol = self.conn_comp.check_solution()
-            
             if not correct_sol:
-                assert(self.conn_comp.all_same_color!=1)
                 node.is_visited = False
                 print("at target, conditions not met!")  if self.verbose else None
                 return False
             else:
-                assert(self.conn_comp.all_same_color==1)
                 return True
             #return True
         
         neighbours_priority = []
-        all_same_color_prev = self.conn_comp.all_same_color
         if node.is_boundary_node: 
             S1_same_color, S2_same_color = True, True
             if self.flag:
@@ -78,11 +74,6 @@ class HeuristicsSolver(BaseSolver):
                     
                     S1_same_color = self.conn_comp.is_same_colors(S1_prev)
                     S2_same_color = self.conn_comp.is_same_colors(S2_prev)
-                    if S1_same_color and S2_same_color:
-                        self.conn_comp.all_same_color = 1
-                    else:
-                        self.conn_comp.all_same_color = 0
-                        
                     if not (S1_same_color or S2_same_color):
                         #print("Not same color!")
                         node.is_visited = False
@@ -167,6 +158,5 @@ class HeuristicsSolver(BaseSolver):
             self.corner_graph.add_edge(node, nei)
         '''
         node.is_visited = False
-        self.conn_comp.all_same_color = all_same_color_prev
-        
+    
         return False
