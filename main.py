@@ -9,11 +9,11 @@ time_BF = 0
 NUM_ROWS = 5
 NUM_COLS = 5
 
-for i in range(100):
+for i in range(2):
     
     g = graph.GraphBuilder()
     #g.build_graph(file_path="board_3x3_1.txt")
-    g.build_random_graph(num_rows=NUM_ROWS, num_cols=NUM_COLS)
+    g.build_random_graph(num_rows=NUM_ROWS, num_cols=NUM_COLS, prob_squares=[0.3,0.3], prob_broken_edges=0.01)
     #g.save_to_file("random.txt")
     #g.print_board()
     
@@ -28,11 +28,12 @@ for i in range(100):
     
     g = g_copy
     #g.print_board()
+    start=time.process_time()
+    
     p = graph.PreprocessGraph(g)
     p.preprocess(g)
 
-    start=time.process_time()
-    btf = BruteForceSolver(g.square_graph, g.corner_graph)
+    btf = HeuristicsSolver(g.square_graph, g.corner_graph)
     path_HS = btf.solve()
     end=time.process_time()
     

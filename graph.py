@@ -29,6 +29,7 @@ class SquareGraph():
     
     def __init__(self):
         self.graph = defaultdict(set)
+        
         self.map = dict()
         
     def delete_edge(self, s1, s2):
@@ -97,7 +98,8 @@ class Node():
 class CornerGraph():
     
     def __init__(self):
-        self.graph = defaultdict(set)    
+        self.graph = defaultdict(set)
+        self.always_taken = set()
         self.map = dict()
         self.start_node = None
         
@@ -125,6 +127,22 @@ class CornerGraph():
         self.graph[n1].add(n2)
         self.graph[n2].add(n1)
     
+    def set_always_taken(self, n1, n2):
+        
+        if type(n1)==Node:
+            n1 = n1.position
+            n2 = n2.position
+        
+        self.always_taken.add((n1,n2))
+        self.always_taken.add((n2,n1))
+      
+    def is_always_taken(self, n1, n2):
+        if type(n1)==Node:
+            n1 = n1.position
+            n2 = n2.position
+            
+        return True if (n1,n2) in self.always_taken else False
+    
     def add_node(self,n1):
         self.graph[n1]
         self.map[n1.position] = n1
@@ -146,7 +164,9 @@ class CornerGraph():
             n1 = self.get_node(n1)
         return self.graph[n1]
     
-    
+    def always_taken_neighbours(self, node, neighbours):
+        return [nei for nei in neighbours if self.is_always_taken(node, nei)]
+        
     def print_me(self):
         for k,v in self.graph.items():
             print(k.to_string(), end=" -> ")

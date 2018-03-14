@@ -58,11 +58,18 @@ class HeuristicsSolver(BaseSolver):
             for nei in neighbours:
                print(nei.to_string(), end=" ")
             print("")
+        '''
         # heuristics 1
+        xxxxxx No Improvement xxxxxxxx
         # remove other edges from a node.
         for nei in neighbours:
             self.corner_graph.delete_edge(node, nei)
+        ''' 
+        always_taken_neighbours = self.corner_graph.always_taken_neighbours(node,neighbours)
         
+        if always_taken_neighbours:
+            neighbours = always_taken_neighbours
+            
         for nei in neighbours:
             if not nei.is_visited:
                 self.path.append(nei)
@@ -80,11 +87,11 @@ class HeuristicsSolver(BaseSolver):
                 if S1 and S2:
                     self.square_graph.add_edge(S1,S2) 
                 self.path.pop()
-                
+        '''
         # undo heuristics 1
         for nei in neighbours:
             self.corner_graph.add_edge(node, nei)
-        
+        '''
         node.is_visited = False
     
         return False
