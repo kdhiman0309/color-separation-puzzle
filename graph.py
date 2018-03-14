@@ -267,7 +267,7 @@ class GraphBuilder():
                     if j!=self.CR_COLS-1:
                         if matrix[i][j+1]==".":
                             self.corner_graph.add_edge((_i,_j), (_i,_j+1))
-        self.corner_graph.print_me()
+        #self.corner_graph.print_me()
     
     def build_graph(self,file_path=None, matrix=None):
         
@@ -306,7 +306,7 @@ class GraphBuilder():
             c = 1
             while(c%2!=0):
                 c = random.randint(0,self.CR_COLS-1)
-            print(r,c)
+            #print(r,c)
             return r,c
         
         def set_start():
@@ -316,7 +316,7 @@ class GraphBuilder():
                 r=0
             else:
                 c=0
-            print("start at", r,c)
+            #print("start at", r,c)
             matrix[r][c] = '*'
         
         def set_end():
@@ -357,10 +357,7 @@ class GraphBuilder():
                 else:
                     matrix[i][j] = '.'
         
-        for x in matrix:
-            for y in x:
-                print(y,end=" ")
-            print("")
+        
         self.build_graph(matrix=matrix)
         
     def save_to_file(self,file_name):
@@ -428,7 +425,7 @@ class PreprocessGraph(GraphBuilder):
         neigh= g.square_graph.get_neighbours(S1)
         #print("neigh: ", neigh)
         for n in neigh:
-            print(n.color," ",S1.color)
+            #print(n.color," ",S1.color)
             if n.color!=S1.color and n.color!='.' and S1.color!='.':
                 #g.square_graph.delete_edge(S1,n)
                 S1_nodes=set([S1.N_TL,S1.N_TR,S1.N_BL,S1.N_BR])
@@ -445,7 +442,7 @@ class PreprocessGraph(GraphBuilder):
                 S1= g.square_graph.get_square((i,j))
                 neigh= list(g.square_graph.get_neighbours(S1))
                 for n in neigh:
-                    print(n.color," ",S1.color)
+                    #print(n.color," ",S1.color)
                     if n.color!=S1.color and n.color!='.' and S1.color!='.':
                         g.square_graph.delete_edge(S1,n)
     

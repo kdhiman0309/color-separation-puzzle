@@ -24,3 +24,9 @@ class BaseSolver():
             return node.SQ_BL, node.SQ_TL
         if(d == 'RIGHT'):
             return node.SQ_BR, node.SQ_TR
+    
+    def print_path(self):
+        print("\npath:: ",end="")
+        for p in self.path:
+            print(p.to_string(), end=" -> ")
+        print()
