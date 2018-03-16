@@ -52,30 +52,32 @@ class HeuristicsSolver(BaseSolver):
         
         node.is_visited = True
        
-        print("At:", node.position) if self.verbose else None
+        print("At:", node.position, "prev:",(self.path[-2].position if len(self.path)>1 else "None")) if self.verbose else None
         
-        if node.is_target_node:
-            correct_sol = self.conn_comp.check_solution()
-            if not correct_sol:
-                node.is_visited = False
-                print("at target, conditions not met!")  if self.verbose else None
-                return False
-            else:
-                return True
             #return True
         
         neighbours_priority = []
+        use_neighbours_priority = False
+        all_same_color_prev = self.conn_comp.all_same_color
         if node.is_boundary_node: 
             S1_same_color, S2_same_color = True, True
-            if self.flag:
+            if True:
                 if S1_prev and S2_prev:
                     # optimization
                     # We form a new connected component only when we reach boundary node from an internal node.
                     
                     S1_same_color = self.conn_comp.is_same_colors(S1_prev)
                     S2_same_color = self.conn_comp.is_same_colors(S2_prev)
+                    
+                    if S1_same_color and S2_same_color:
+                        #print(node.to_string(), "Same color", S1_prev.position, S2_prev.position)    
+                        self.conn_comp.all_same_color = 1
+                    else:
+                        #print(node.to_string(), "Not Same color", S1_prev.position, S2_prev.position)    
+                        self.conn_comp.all_same_color = 0
                     if not (S1_same_color or S2_same_color):
                         #print("Not same color!")
+                        self.conn_comp.all_same_color = all_same_color_prev
                         node.is_visited = False
                         return False
                     else:
@@ -84,20 +86,24 @@ class HeuristicsSolver(BaseSolver):
                         #assert(n1 in S1_prev.adj_nodes)
                         #assert(n2.is_boundary_node) 
                         #assert(n2 in S2_prev.adj_nodes)
+                        use_neighbours_priority = True
                         if S1_same_color:
+                            
                             if self.corner_graph.is_edge(node,n2):
                                 neighbours_priority.append(n2)
-                            if self.corner_graph.is_edge(node,n1):
-                                neighbours_priority.append(n1)
+                            #if self.corner_graph.is_edge(node,n1):
+                            #    neighbours_priority.append(n1)
                                 
-                        else:
+                        if S2_same_color:
                             if self.corner_graph.is_edge(node,n1):
                                 neighbours_priority.append(n1)
-                            if self.corner_graph.is_edge(node,n2):
-                                neighbours_priority.append(n2)
+                            #if self.corner_graph.is_edge(node,n2):
+                            #    neighbours_priority.append(n2)
                             
                             
             else:
+                None
+                '''
                 if S1_prev:
                     S1_same_color = self.conn_comp.is_same_colors(S1_prev)
                 if S2_prev:
@@ -107,7 +113,28 @@ class HeuristicsSolver(BaseSolver):
                     #print("Not same color!")
                     node.is_visited = False
                     return False
+                '''
+        
+        if node.is_target_node:
+            if self.flag:
+                correct_sol = self.conn_comp.check_solution_optm()
+            else:
+                correct_sol = self.conn_comp.check_solution()
                 
+            #print("all same = ",self.conn_comp.all_same_color)
+            if not correct_sol:
+                #self.print_path()
+                assert(self.conn_comp.all_same_color==-1 or self.conn_comp.all_same_color==0)
+                self.conn_comp.all_same_color = all_same_color_prev
+                        
+                node.is_visited = False
+                #print("at target, conditions not met!")  if self.verbose else None
+                return False
+            else:
+                #self.print_path()
+                assert(self.conn_comp.all_same_color==-1 or self.conn_comp.all_same_color==1)
+                return True
+        
         #same_color = conn_comp.check_connect_components(S1_prev,S2_prev)
         #if (!same_color):
     			#return false
@@ -125,7 +152,7 @@ class HeuristicsSolver(BaseSolver):
         for nei in neighbours:
             self.corner_graph.delete_edge(node, nei)
         ''' 
-        if self.flag and neighbours_priority:
+        if use_neighbours_priority:
             neighbours = neighbours_priority
             #neighbours = set(neighbours_priority).union(set(neighbours))
             None
@@ -135,28 +162,72 @@ class HeuristicsSolver(BaseSolver):
         if always_taken_neighbours:
             neighbours = always_taken_neighbours
         
-        for nei in neighbours:
-            if not nei.is_visited:
-                self.path.append(nei)
-                d = self.direction(node,nei)
-                S1,S2 = self.get_squares(node,d)
-                print("from:",node.to_string(), "to:",nei.to_string(), end=" ")  if self.verbose else None
-                print("dir:"+d+" S1",(S1.to_string() if S1 else "None"), " ", "S2:", (S2.to_string()  if S2 else "None"))  if self.verbose else None
-                
-                if S1 and S2:
-                    self.square_graph.delete_edge(S1,S2)
+        if self.flag and False:
+            cache_s1_s2 = dict()
+            # [n1 > n2 > n3 > n4]
+            
+            # n4 
+            priority10 = []
+            priority20 = []
+            for nei in neighbours:
+                if not nei.is_visited:
+                    d = self.direction(node,nei)
+                    S1,S2 = self.get_squares(node,d)
+                    cache_s1_s2[nei] = (S1,S2,d)
+                    if S1 and S2:
+                        if S1.color!='.' and S2.color!='.' and S1.color==S2.color:
+                            priority20.append(nei)
+                        else:
+                            priority10.append(nei)
+                    else:
+                        priority10.append(nei)
+                        
+            neighbours = priority10 + priority20
+            
+            for nei in neighbours:
+                if not nei.is_visited:
+                    self.path.append(nei)
                     
-                if self.solve_heuristics(nei,S1,S2,d):
-                    return True
-                
-                if S1 and S2:
-                    self.square_graph.add_edge(S1,S2) 
-                self.path.pop()
+                    #d = self.direction(node,nei)
+                    #S1,S2 = self.get_squares(node,d)
+                    S1,S2,d = cache_s1_s2[nei]
+                    print("from:",node.to_string(), "to:",nei.to_string(), end=" ")  if self.verbose else None
+                    print("dir:"+d+" S1",(S1.to_string() if S1 else "None"), " ", "S2:", (S2.to_string()  if S2 else "None"))  if self.verbose else None
+                    
+                    if S1 and S2:
+                        self.square_graph.delete_edge(S1,S2)
+                        
+                    if self.solve_heuristics(nei,S1,S2,d):
+                        return True
+                    
+                    if S1 and S2:
+                        self.square_graph.add_edge(S1,S2) 
+                    self.path.pop()
+        else:
+            for nei in neighbours:
+                if not nei.is_visited:
+                    self.path.append(nei)
+                    
+                    d = self.direction(node,nei)
+                    S1,S2 = self.get_squares(node,d)
+                    
+                    print("from:",node.to_string(), "to:",nei.to_string(), end=" ")  if self.verbose else None
+                    print("dir:"+d+" S1",(S1.to_string() if S1 else "None"), " ", "S2:", (S2.to_string()  if S2 else "None"))  if self.verbose else None
+                    
+                    if S1 and S2:
+                        self.square_graph.delete_edge(S1,S2)
+                        
+                    if self.solve_heuristics(nei,S1,S2,d):
+                        return True
+                    
+                    if S1 and S2:
+                        self.square_graph.add_edge(S1,S2) 
+                    self.path.pop()
         '''
         # undo heuristics 1
         for nei in neighbours:
             self.corner_graph.add_edge(node, nei)
         '''
         node.is_visited = False
-    
+        self.conn_comp.all_same_color = all_same_color_prev
         return False

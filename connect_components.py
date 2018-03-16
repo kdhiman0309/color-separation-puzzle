@@ -5,9 +5,10 @@ class CheckConnectedComponents():
         self.square_graph = square_graph
         self.corner_graph = corner_graph
         self.visited = set()
-    
+        self.all_same_color = -1
+        
     def is_same_colors(self,square):
-        if False:
+        if True:
             return self.is_same_colors_v2(square)
         
         self.visited = set()
@@ -63,4 +64,15 @@ class CheckConnectedComponents():
                     return False
     
         return True
+    
+    def check_solution_optm(self):
+        if self.all_same_color==-1:
+            for s1 in self.square_graph.graph.keys():
+                if not s1 in self.visited:
+                    if not self.is_same_colors(s1):
+                        return False
+        
+            return True
+        else:
+            return True if self.all_same_color==1 else False
     

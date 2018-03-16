@@ -330,8 +330,8 @@ class GraphBuilder():
         self.SQ_ROWS = num_rows
         self.SQ_COLS = num_cols
         
-        self.CR_COLS = int(num_rows*2+1)
-        self.CR_ROWS = int(num_cols*2+1)
+        self.CR_COLS = int(num_cols*2+1)
+        self.CR_ROWS = int(num_rows*2+1)
         
         matrix = [['.']* self.CR_COLS for _ in range(self.CR_ROWS)]
         
