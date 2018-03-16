@@ -473,53 +473,28 @@ class GraphBuilder():
         else:
             print(_str)
 
-class PreprocessGraph(GraphBuilder):
+class PreprocessGraph(GraphBuilder):        
     
-    def __init__(self,g):
-        self.always_taken_graph = CornerGraph()
-        
     def __taken_edges(self,g,S1):
         neigh= g.square_graph.get_neighbours(S1)
-        #print("neigh: ", neigh)
         for n in neigh:
-            #print(n.color," ",S1.color)
             if n.color!=S1.color and n.color!='.' and S1.color!='.':
-                #g.square_graph.delete_edge(S1,n)
-                S1_nodes=S1.adj_nodes#set([S1.N_TL,S1.N_TR,S1.N_BL,S1.N_BR])
-                n_nodes=n.adj_nodes#set([n.N_TL,n.N_TR,n.N_BL,n.N_BR])
+                S1_nodes=S1.adj_nodes
+                n_nodes=n.adj_nodes
                 edge = S1_nodes.intersection(n_nodes)
                 if edge:
-                    self.always_taken_graph.add_node(list(edge)[0])
-                    self.always_taken_graph.add_node(list(edge)[1])
-                    self.always_taken_graph.add_edge(list(edge)[0],list(edge)[1])
-                
-    
-    def __delete_square_edges(self,g):
-        for i in range(g.SQ_ROWS):
-            for j in range(g.SQ_COLS):
-                S1= g.square_graph.get_square((i,j))
-                neigh= list(g.square_graph.get_neighbours(S1))
-                for n in neigh:
-                    #print(n.color," ",S1.color)
-                    if n.color!=S1.color and n.color!='.' and S1.color!='.':
-                        g.square_graph.delete_edge(S1,n)
-    
+                    g.corner_graph.set_always_taken(list(edge)[0],list(edge)[1])
     
     def __delete_corner_edges(self,g):
         for i in range(int(g.CR_ROWS/2)):
             for j in range(int(g.CR_COLS/2)):
                 node_origin = g.corner_graph.get_node((i,j))
-                if (i,j) in self.always_taken_graph.map.keys():
-                    node_always_taken = self.always_taken_graph.get_node((i,j))
-    
-                    neigh_origin=g.corner_graph.get_neighbours(node_origin)
-                    neigh_always_taken=self.always_taken_graph.get_neighbours(node_always_taken)
-                    
-                    if len(neigh_always_taken) > 1:
+                neigh_origin=g.corner_graph.get_neighbours(node_origin)
+                neigh_always_taken=g.corner_graph.always_taken_neighbours(node_origin,neigh_origin)
+                if len(neigh_always_taken) > 1:
                         n=neigh_origin.difference(neigh_always_taken)
-                    
+                
                         for node in n:
-                            #print("DELETING EDGE BETWEEN ::: ", node.position,node_origin.position)
                             g.corner_graph.delete_edge(node,node_origin)
             
     def preprocess(self,g):
@@ -527,8 +502,6 @@ class PreprocessGraph(GraphBuilder):
             for j in range(g.SQ_COLS):
                 S1= g.square_graph.get_square((i,j))
                 self.__taken_edges(g,S1)
-                #self.always_taken_graph.print_me
                 
         self.__delete_corner_edges(g)
-        #self.__delete_square_edges(g)
 
